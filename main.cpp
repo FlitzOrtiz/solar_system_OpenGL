@@ -1,43 +1,27 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <iostream>
+#include "model/Ventana.h"
+#include "model/Shader.h"
 #include <cmath>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <string>
+#include <iostream>
 
+// --- Configuración de la Esfera ---
 #define N_SUBDIVISIONES 6
 #define RADIO_ESFERA 1.0f
+// 4 caras iniciales * 4^N triángulos por cara * 3 vértices * 6 datos (pos + norm)
 #define VERTEX_ARRAY_SIZE (4 * (int)pow(4, N_SUBDIVISIONES) * 3 * 6)
-
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
 
 // --- Parámetros de Transformación ---
 float posEsfera[]    = { 0.0f, 0.0f, 0.0f };
 float escalaEsfera[] = { 1.0f, 1.0f, 1.0f };
-float rotEsfera[]    = { 0.0f, 0.0f, 0.0f }; // En radianes
+float rotEsfera[]    = { 0.0f, 0.0f, 0.0f }; 
 
 // --- Parámetros de Iluminación ---
-float p0[] = { 0.9f, 0.9f, 0.9f }; 
-float v_pos[] = { 0.0f, 1.0f, 3.0f }; 
-float La[]={0.2f,0.2f,0.2f}, Ld[]={1.0f,1.0f,1.0f}, Le[]={1.0f,1.0f,1.0f};
-float Ka[]={0.0f,0.1f,0.3f}, Kd[]={0.0f,0.5f,0.8f}, Ke[]={0.5f,0.5f,0.5f};
-float alpha = 10.0f;
+float p0[]    = { 1.2f, 1.2f, 2.0f }; // Posición de la luz
+float v_pos[] = { 0.0f, 0.0f, 3.0f }; // Posición de la cámara
+float La[]={0.2f, 0.2f, 0.2f}, Ld[]={1.0f, 1.0f, 1.0f}, Le[]={1.0f, 1.0f, 1.0f};
+float Ka[]={0.1f, 0.1f, 0.1f}, Kd[]={0.0f, 0.5f, 0.8f}, Ke[]={1.0f, 1.0f, 1.0f};
+float alpha = 32.0f;
 
-std::string leerShader(const char* ruta) {
-    std::ifstream archivo(ruta);
-    if (!archivo.is_open()) {
-        std::cout << "ERROR::SHADER::ARCHIVO_NO_LEIDO: " << ruta << std::endl;
-        return "";
-    }
-    std::stringstream stream;
-    stream << archivo.rdbuf();
-    return stream.str();
-}
-
-// Estructuras para la esfera
+// --- Estructuras y Funciones Geométricas ---
 struct Vec3 { float x, y, z; };
 Vec3 sumar(Vec3 a, Vec3 b) { return {a.x+b.x, a.y+b.y, a.z+b.z}; }
 Vec3 proyectar(Vec3 v, float r) {
@@ -47,10 +31,13 @@ Vec3 proyectar(Vec3 v, float r) {
 
 void subdividir(Vec3 v1, Vec3 v2, Vec3 v3, int depth, float r, float* buf, int& i) {
     if (depth == 0) {
+        // Vértice 1: Posición y Normal
         buf[i++] = v1.x; buf[i++] = v1.y; buf[i++] = v1.z;
         Vec3 n1 = proyectar(v1, 1.0f); buf[i++] = n1.x; buf[i++] = n1.y; buf[i++] = n1.z;
+        // Vértice 2
         buf[i++] = v2.x; buf[i++] = v2.y; buf[i++] = v2.z;
         Vec3 n2 = proyectar(v2, 1.0f); buf[i++] = n2.x; buf[i++] = n2.y; buf[i++] = n2.z;
+        // Vértice 3
         buf[i++] = v3.x; buf[i++] = v3.y; buf[i++] = v3.z;
         Vec3 n3 = proyectar(v3, 1.0f); buf[i++] = n3.x; buf[i++] = n3.y; buf[i++] = n3.z;
         return;
@@ -76,7 +63,7 @@ void generarEsfera(float* vertices) {
     }
 }
 
-// Matrices auxiliares
+// --- Matrices Auxiliares ---
 void identidad(float* m) { for(int i=0;i<16;i++) m[i]=0; m[0]=1; m[5]=1; m[10]=1; m[15]=1; }
 void vista(float* m, float z) { identidad(m); m[14] = -z; }
 void proyeccion(float* m, float fov, float aspect, float n, float f) {
@@ -85,90 +72,77 @@ void proyeccion(float* m, float fov, float aspect, float n, float f) {
 }
 
 int main() {
-    glfwInit();
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Esfera con Matrices Manuales", NULL, NULL);
-    glfwMakeContextCurrent(window);
-    glewInit();
+    // 1. Inicializar Ventana (GLFW/GLEW/Profundidad)
+    Ventana app(800, 600, "Shader Phong - Arquitectura Modular");
 
-    // --- Carga de Shaders desde archivos ---
-    std::string vCode = leerShader("shaders/vertex_shader.glsl");
-    std::string fCode = leerShader("shaders/fragment_shader.glsl");
-    const char* vShaderSource = vCode.c_str();
-    const char* fShaderSource = fCode.c_str();
+    // 2. Cargar Shaders
+    Shader shaderEsfera("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
 
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    // Buffer de datos
+    // 3. Preparar Geometría
     float* vertices = new float[VERTEX_ARRAY_SIZE];
     generarEsfera(vertices);
 
     unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO); glGenBuffers(1, &VBO);
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, VERTEX_ARRAY_SIZE * sizeof(float), vertices, GL_STATIC_DRAW);
-    
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
+
+    // Atributo 0: Posición (x,y,z) | Atributo 1: Normal (nx,ny,nz)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glEnable(GL_DEPTH_TEST);
-    glUseProgram(shaderProgram);
-
-    // Matrices de Cámara y Proyección
+    // 4. Matrices de Cámara Estáticas
     float m_view[16], m_proj[16];
-    vista(m_view, 3.0f);
-    proyeccion(m_proj, 0.8f, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+    vista(m_view, 3.5f);
+    proyeccion(m_proj, 0.78f, 800.0f/600.0f, 0.1f, 100.0f);
 
-    while(!glfwWindowShouldClose(window)) {
-        if(glfwGetKey(window, GLFW_KEY_ESCAPE)==GLFW_PRESS) glfwSetWindowShouldClose(window, true);
-        
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    // --- Bucle de Renderizado ---
+    while (!app.debeCerrar()) {
+        // Input simple
+        if (glfwGetKey(app.window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(app.window, true);
+
+        // Limpiar pantalla
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
+        shaderEsfera.use();
 
-        // --- ENVIAR UNIFORMS DE TRANSFORMACIÓN ---
-        glUniform3fv(glGetUniformLocation(shaderProgram, "uDesplazamiento"), 1, posEsfera);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "uEscala"), 1, escalaEsfera);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "uAngulos"), 1, rotEsfera);
+        // Animación simple (opcional)
+        rotEsfera[1] += 0.01f; // Rotar en Y
 
-        // --- ENVIAR UNIFORMS DE CÁMARA ---
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, m_view);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, m_proj);
+        // Enviar Uniforms de Transformación (GPU calcula la matriz Model)
+        shaderEsfera.setVec3("uDesplazamiento", posEsfera);
+        shaderEsfera.setVec3("uEscala", escalaEsfera);
+        shaderEsfera.setVec3("uAngulos", rotEsfera);
 
-        // --- ENVIAR UNIFORMS DE ILUMINACIÓN ---
-        glUniform3fv(glGetUniformLocation(shaderProgram, "p0"), 1, p0);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "v_pos"), 1, v_pos);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "La"), 1, La);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "Ld"), 1, Ld);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "Le"), 1, Le);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "Ka"), 1, Ka);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "Kd"), 1, Kd);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "Ke"), 1, Ke);
-        glUniform1f(glGetUniformLocation(shaderProgram, "alpha"), alpha);
+        // Enviar Matrices de Cámara
+        shaderEsfera.setMat4("view", m_view);
+        shaderEsfera.setMat4("projection", m_proj);
 
+        // Enviar Uniforms de Iluminación
+        shaderEsfera.setVec3("p0", p0);
+        shaderEsfera.setVec3("v_pos", v_pos);
+        shaderEsfera.setVec3("La", La); shaderEsfera.setVec3("Ld", Ld); shaderEsfera.setVec3("Le", Le);
+        shaderEsfera.setVec3("Ka", Ka); shaderEsfera.setVec3("Kd", Kd); shaderEsfera.setVec3("Ke", Ke);
+        shaderEsfera.setFloat("alpha", alpha);
+
+        // Dibujar
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, VERTEX_ARRAY_SIZE / 6);
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        app.refrescar();
     }
-    
+
+    // Limpieza
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
     delete[] vertices;
+
     return 0;
 }
