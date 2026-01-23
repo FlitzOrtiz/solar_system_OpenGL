@@ -1,148 +1,231 @@
-#include "model/Ventana.h"
-#include "model/Shader.h"
-#include <cmath>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <iostream>
+#include <vector>
+#include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-// --- Configuración de la Esfera ---
-#define N_SUBDIVISIONES 6
-#define RADIO_ESFERA 1.0f
-// 4 caras iniciales * 4^N triángulos por cara * 3 vértices * 6 datos (pos + norm)
-#define VERTEX_ARRAY_SIZE (4 * (int)pow(4, N_SUBDIVISIONES) * 3 * 6)
+#include "model/Sphere.h"
 
-// --- Parámetros de Transformación ---
-float posEsfera[]    = { 0.0f, 0.0f, 0.0f };
-float escalaEsfera[] = { 1.0f, 1.0f, 1.0f };
-float rotEsfera[]    = { 0.0f, 0.0f, 0.0f }; 
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
-// --- Parámetros de Iluminación ---
-float p0[]    = { 1.2f, 1.2f, 2.0f }; // Posición de la luz
-float v_pos[] = { 0.0f, 0.0f, 3.0f }; // Posición de la cámara
-float La[]={0.2f, 0.2f, 0.2f}, Ld[]={1.0f, 1.0f, 1.0f}, Le[]={1.0f, 1.0f, 1.0f};
-float Ka[]={0.1f, 0.1f, 0.1f}, Kd[]={0.0f, 0.5f, 0.8f}, Ke[]={1.0f, 1.0f, 1.0f};
-float alpha = 32.0f;
+// ================= SHADERS (SIN CAMBIOS) =================
+const char* vertexShaderSource = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
 
-// --- Estructuras y Funciones Geométricas ---
-struct Vec3 { float x, y, z; };
-Vec3 sumar(Vec3 a, Vec3 b) { return {a.x+b.x, a.y+b.y, a.z+b.z}; }
-Vec3 proyectar(Vec3 v, float r) {
-    float len = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-    return { (v.x/len)*r, (v.y/len)*r, (v.z/len)*r };
+uniform vec3 uDesplazamiento; 
+uniform vec3 uEscala;         
+uniform vec3 uAngulos;        
+
+uniform mat4 view;
+uniform mat4 projection;
+
+out vec3 FragPos;
+out vec3 Normal;
+
+void main()
+{
+    mat4 t = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, uDesplazamiento.x, uDesplazamiento.y, uDesplazamiento.z, 1.0);
+    mat4 s = mat4(uEscala.x, 0.0, 0.0, 0.0, 0.0, uEscala.y, 0.0, 0.0, 0.0, 0.0, uEscala.z, 0.0, 0.0, 0.0, 0.0, 1.0);
+
+    float cx = cos(uAngulos.x); float sx = sin(uAngulos.x);
+    mat4 rx = mat4(1.0, 0.0, 0.0, 0.0, 0.0, cx, sx, 0.0, 0.0, -sx, cx, 0.0, 0.0, 0.0, 0.0, 1.0);
+    float cy = cos(uAngulos.y); float sy = sin(uAngulos.y);
+    mat4 ry = mat4(cy, 0.0, -sy, 0.0, 0.0, 1.0, 0.0, 0.0, sy, 0.0, cy, 0.0, 0.0, 0.0, 0.0, 1.0);
+    float cz = cos(uAngulos.z); float sz = sin(uAngulos.z);
+    mat4 rz = mat4(cz, sz, 0.0, 0.0, -sz, cz, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+    
+    mat4 rot = rz * ry * rx;
+    mat4 model = t * rot * s;
+
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(rot) * aNormal; 
+}
+)";
+
+const char* fragmentShaderSource = R"(
+#version 330 core
+out vec4 FragColor;
+
+in vec3 FragPos;
+in vec3 Normal;
+
+uniform vec3 p0; 
+uniform vec3 v_pos; 
+uniform vec3 La, Ld, Le; 
+uniform vec3 Ka, Kd, Ke; 
+uniform float alpha; 
+
+void main() {
+    vec3 n = normalize(Normal);
+    vec3 l = normalize(p0 - FragPos);
+    vec3 v = normalize(v_pos - FragPos);
+    vec3 r = reflect(-l, n);
+
+    float dist = length(FragPos - p0);
+    float dist2 = dist * dist;
+    if(dist2 < 0.01) dist2 = 0.0001; 
+
+    vec3 Ia = Ka * La;
+    vec3 Id = (Kd * Ld * max(dot(n, l), 0.0)) / dist2; 
+    vec3 Ie = (Ke * Le * pow(max(dot(r, v), 0.0), alpha)) / dist2;
+
+    FragColor = vec4(Ia + Id + Ie, 1.0);
+}
+)";
+
+// ================= VARIABLES CÁMARA =================
+float cameraAngleX = 0.0f;
+float cameraDistance = 10.0f; 
+glm::vec3 cameraPos;
+glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float rotationSpeed = 60.0f;
+
+void updateCamera() {
+    cameraPos.x = cameraDistance * sin(cameraAngleX);
+    cameraPos.y = cameraDistance * 0.5f; 
+    cameraPos.z = cameraDistance * cos(cameraAngleX);
 }
 
-void subdividir(Vec3 v1, Vec3 v2, Vec3 v3, int depth, float r, float* buf, int& i) {
-    if (depth == 0) {
-        // Vértice 1: Posición y Normal
-        buf[i++] = v1.x; buf[i++] = v1.y; buf[i++] = v1.z;
-        Vec3 n1 = proyectar(v1, 1.0f); buf[i++] = n1.x; buf[i++] = n1.y; buf[i++] = n1.z;
-        // Vértice 2
-        buf[i++] = v2.x; buf[i++] = v2.y; buf[i++] = v2.z;
-        Vec3 n2 = proyectar(v2, 1.0f); buf[i++] = n2.x; buf[i++] = n2.y; buf[i++] = n2.z;
-        // Vértice 3
-        buf[i++] = v3.x; buf[i++] = v3.y; buf[i++] = v3.z;
-        Vec3 n3 = proyectar(v3, 1.0f); buf[i++] = n3.x; buf[i++] = n3.y; buf[i++] = n3.z;
-        return;
+void processInput(GLFWwindow* window, float deltaTime) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        cameraAngleX -= glm::radians(rotationSpeed) * deltaTime;
+        updateCamera();
     }
-    Vec3 m1 = proyectar(sumar(v1,v2), r);
-    Vec3 m2 = proyectar(sumar(v2,v3), r);
-    Vec3 m3 = proyectar(sumar(v3,v1), r);
-    subdividir(v1, m1, m3, depth-1, r, buf, i);
-    subdividir(m1, v2, m2, depth-1, r, buf, i);
-    subdividir(m3, m2, v3, depth-1, r, buf, i);
-    subdividir(m1, m2, m3, depth-1, r, buf, i);
-}
-
-void generarEsfera(float* vertices) {
-    Vec3 base[4] = { {1,1,1}, {1,-1,-1}, {-1,1,-1}, {-1,-1,1} };
-    int idx[4][3] = { {0,2,1}, {0,1,3}, {0,3,2}, {1,2,3} };
-    int k = 0;
-    for(int j=0; j<4; j++) {
-        Vec3 v1 = proyectar(base[idx[j][0]], RADIO_ESFERA);
-        Vec3 v2 = proyectar(base[idx[j][1]], RADIO_ESFERA);
-        Vec3 v3 = proyectar(base[idx[j][2]], RADIO_ESFERA);
-        subdividir(v1, v2, v3, N_SUBDIVISIONES, RADIO_ESFERA, vertices, k);
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        cameraAngleX += glm::radians(rotationSpeed) * deltaTime;
+        updateCamera();
     }
 }
 
-// --- Matrices Auxiliares ---
-void identidad(float* m) { for(int i=0;i<16;i++) m[i]=0; m[0]=1; m[5]=1; m[10]=1; m[15]=1; }
-void vista(float* m, float z) { identidad(m); m[14] = -z; }
-void proyeccion(float* m, float fov, float aspect, float n, float f) {
-    identidad(m); float t = tan(fov/2);
-    m[0]=1/(aspect*t); m[5]=1/t; m[10]=-(f+n)/(f-n); m[11]=-1; m[14]=-(2*f*n)/(f-n); m[15]=0;
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
 }
 
+unsigned int compileShader(const char* source, GLenum type) {
+    unsigned int shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
+    return shader;
+}
+
+unsigned int createShaderProgram() {
+    unsigned int vs = compileShader(vertexShaderSource, GL_VERTEX_SHADER);
+    unsigned int fs = compileShader(fragmentShaderSource, GL_FRAGMENT_SHADER);
+    unsigned int prog = glCreateProgram();
+    glAttachShader(prog, vs); glAttachShader(prog, fs); glLinkProgram(prog);
+    glDeleteShader(vs); glDeleteShader(fs);
+    return prog;
+}
+
+// ================= MAIN =================
 int main() {
-    // 1. Inicializar Ventana (GLFW/GLEW/Profundidad)
-    Ventana app(800, 600, "Shader Phong - Arquitectura Modular");
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // 2. Cargar Shaders
-    Shader shaderEsfera("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Planetas - Material Interno", NULL, NULL);
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // 3. Preparar Geometría
-    float* vertices = new float[VERTEX_ARRAY_SIZE];
-    generarEsfera(vertices);
+    glewExperimental = GL_TRUE; 
+    glewInit();
+    glEnable(GL_DEPTH_TEST);
 
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    unsigned int shaderProgram = createShaderProgram();
+    updateCamera();
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, VERTEX_ARRAY_SIZE * sizeof(float), vertices, GL_STATIC_DRAW);
+    // ===========================================
+    // 1. CONFIGURACIÓN DEL SOL
+    // ===========================================
+    Sphere sun(0.2f);
+    // Material Sol:
+    // Ka (Ambiental): Amarilla brillante
+    // Kd (Difusa): Amarilla Intensa
+    // Ke (Especular): Blanca
+    // Shininess: 16
+    sun.setMaterial(
+        glm::vec3(0.8f, 0.6f, 0.0f), 
+        glm::vec3(1.0f, 0.9f, 0.0f), 
+        glm::vec3(1.0f, 1.0f, 1.0f), 
+        16.0f
+    );
 
-    // Atributo 0: Posición (x,y,z) | Atributo 1: Normal (nx,ny,nz)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    // ===========================================
+    // 2. CONFIGURACIÓN DE LA TIERRA
+    // ===========================================
+    Sphere earth(2.0f);
+    // Material Tierra:
+    // Ka (Ambiental): Azul oscuro muy tenue
+    // Kd (Difusa): Azul/Cian
+    // Ke (Especular): Blanco brillante (reflejo océanos)
+    // Shininess: 64 (más brillante/húmedo)
+    earth.setMaterial(
+        glm::vec3(0.0f, 0.1f, 0.2f), 
+        glm::vec3(0.0f, 0.4f, 0.8f), 
+        glm::vec3(0.5f, 0.5f, 0.5f), 
+        64.0f
+    );
 
-    // 4. Matrices de Cámara Estáticas
-    float m_view[16], m_proj[16];
-    vista(m_view, 3.5f);
-    proyeccion(m_proj, 0.78f, 800.0f/600.0f, 0.1f, 100.0f);
+    // Propiedades de la LUZ (externas a las esferas)
+    glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
+    glm::vec3 La(1.0f, 1.0f, 1.0f);
+    glm::vec3 Ld(1.0f, 1.0f, 1.0f);
+    glm::vec3 Le(1.0f, 1.0f, 1.0f);
 
-    // --- Bucle de Renderizado ---
-    while (!app.debeCerrar()) {
-        // Input simple
-        if (glfwGetKey(app.window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(app.window, true);
+    while (!glfwWindowShouldClose(window)) {
+        float currentTime = (float)glfwGetTime();
+        float deltaTime = currentTime - 0.0f; // Simplificado para ejemplo
 
-        // Limpiar pantalla
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        processInput(window, 0.016f); // Delta time fijo aprox
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shaderEsfera.use();
+        glUseProgram(shaderProgram);
 
-        // Animación simple (opcional)
-        rotEsfera[1] += 0.01f; // Rotar en Y
+        // Actualizar Matrices Globales
+        glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, cameraUp);
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Enviar Uniforms de Transformación (GPU calcula la matriz Model)
-        shaderEsfera.setVec3("uDesplazamiento", posEsfera);
-        shaderEsfera.setVec3("uEscala", escalaEsfera);
-        shaderEsfera.setVec3("uAngulos", rotEsfera);
+        // Actualizar Luz Global
+        glUniform3fv(glGetUniformLocation(shaderProgram, "p0"), 1, glm::value_ptr(lightPos));
+        glUniform3fv(glGetUniformLocation(shaderProgram, "v_pos"), 1, glm::value_ptr(cameraPos));
+        glUniform3fv(glGetUniformLocation(shaderProgram, "La"), 1, glm::value_ptr(La));
+        glUniform3fv(glGetUniformLocation(shaderProgram, "Ld"), 1, glm::value_ptr(Ld));
+        glUniform3fv(glGetUniformLocation(shaderProgram, "Le"), 1, glm::value_ptr(Le));
 
-        // Enviar Matrices de Cámara
-        shaderEsfera.setMat4("view", m_view);
-        shaderEsfera.setMat4("projection", m_proj);
+        // ----------------------------------------
+        // DIBUJAR SOL
+        // ----------------------------------------
+        // Ya no pasamos color aquí, el objeto 'sun' ya sabe que es amarillo
+        sun.Draw(shaderProgram, currentTime, glm::vec3(0.0f), glm::vec3(1.5f));
 
-        // Enviar Uniforms de Iluminación
-        shaderEsfera.setVec3("p0", p0);
-        shaderEsfera.setVec3("v_pos", v_pos);
-        shaderEsfera.setVec3("La", La); shaderEsfera.setVec3("Ld", Ld); shaderEsfera.setVec3("Le", Le);
-        shaderEsfera.setVec3("Ka", Ka); shaderEsfera.setVec3("Kd", Kd); shaderEsfera.setVec3("Ke", Ke);
-        shaderEsfera.setFloat("alpha", alpha);
+        // ----------------------------------------
+        // DIBUJAR TIERRA
+        // ----------------------------------------
+        float orbitRadius = 4.0f;
+        float x = sin(currentTime * 0.5f) * orbitRadius;
+        float z = cos(currentTime * 0.5f) * orbitRadius;
+        // El objeto 'earth' ya sabe que es azul
+        earth.Draw(shaderProgram, currentTime, glm::vec3(x, 0.0f, z), glm::vec3(0.5f));
 
-        // Dibujar
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, VERTEX_ARRAY_SIZE / 6);
-
-        app.refrescar();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
-    // Limpieza
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    delete[] vertices;
-
+    glfwTerminate();
     return 0;
 }
