@@ -8,11 +8,11 @@
 #include <iostream>
 
 // ================= VARIABLES GLOBALES =================
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1000;
+const unsigned int SCR_HEIGHT = 800;
 
 float cameraAngleX = 0.0f;
-float cameraDistance = 10.0f; 
+float cameraDistance = 70.0f; // 30.0f por defecto
 glm::vec3 cameraPos;
 glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -59,20 +59,112 @@ int main() {
         16.0f
     );
     // Cargamos la textura para el Sol [cite: 161, 164]
-    sun.loadTexture("textures/2k_earth_daymap.jpg");
+    sun.loadTexture("textures/2k_sun.jpg");
 
     // ---------------------------------------------------------
-    // 2. CONFIGURACIÓN DE LA TIERRA
+    // 2. CONFIGURACIÓN DE LOS PLANETAS
     // ---------------------------------------------------------
-    Sphere earth(2.0f);
+
+    // DEFINIR RADIOS ORBITALES (como variables)
+    float orbitRadiusM = 3.0f;    // Mercurio
+    float orbitRadiusV = 5.5f;    // Venus
+    float orbitRadiusE = 7.0f;    // Tierra
+    float orbitRadiusMa = 10.0f;  // Marte
+    float orbitRadiusJ = 15.0f;   // Júpiter
+    float orbitRadiusS = 22.0f;   // Saturno
+    float orbitRadiusU = 30.0f;   // Urano
+    float orbitRadiusN = 40.0f;   // Neptuno
+    
+    // DEFINIR VELOCIDADES ORBITALES
+    float orbitalSpeedM = 4.0f;   // Mercurio
+    float orbitalSpeedV = 2.5f;   // Venus
+    float orbitalSpeedE = 1.0f;   // Tierra - base
+    float orbitalSpeedMa = 0.75f; // Marte
+    float orbitalSpeedJ = 0.25f;  // Júpiter
+    float orbitalSpeedS = 0.15f;  // Saturno
+    float orbitalSpeedU = 0.08f;  // Urano
+    float orbitalSpeedN = 0.05f;  // Neptuno
+
+    // CONFIGURACIÓN DE PLANETAS
+
+    Sphere mercury(0.05f);
+    mercury.setMaterial(
+        glm::vec3(0.5f, 0.5f, 0.5f), 
+        glm::vec3(0.7f, 0.7f, 0.7f), 
+        glm::vec3(0.3f, 0.3f, 0.3f), 
+        100.0f
+    );
+
+    Sphere venus(-0.02f);
+    venus.setMaterial(
+        glm::vec3(0.9f, 0.7f, 0.2f), 
+        glm::vec3(1.0f, 0.8f, 0.3f), 
+        glm::vec3(0.5f, 0.4f, 0.2f), 
+        120.0f
+    );
+
+
+    Sphere earth(1.0f);
     earth.setMaterial(
         glm::vec3(0.0f, 0.1f, 0.2f), 
         glm::vec3(0.0f, 0.4f, 0.8f), 
         glm::vec3(0.5f, 0.5f, 0.5f), 
-        500.0f
+        150.0f
     );
+
+    Sphere mars(0.95f);
+    mars.setMaterial(
+        glm::vec3(0.6f, 0.2f, 0.1f), 
+        glm::vec3(0.8f, 0.3f, 0.1f), 
+        glm::vec3(0.4f, 0.2f, 0.1f), 
+        130.0f
+    );
+
+    Sphere jupyter(2.5f);
+    jupyter.setMaterial(
+        glm::vec3(0.8f, 0.4f, 0.1f),  
+        glm::vec3(0.9f, 0.5f, 0.2f), 
+        glm::vec3(0.5f, 0.5f, 0.5f), 
+        200.0f
+    );
+
+    Sphere saturn(2.3f);
+    saturn.setMaterial(
+        glm::vec3(0.9f, 0.8f, 0.6f), 
+        glm::vec3(1.0f, 0.9f, 0.7f), 
+        glm::vec3(0.6f, 0.5f, 0.4f), 
+        180.0f
+    );
+
+
+    // URANO
+    Sphere uranus(1.5f);
+    uranus.setMaterial(
+        glm::vec3(0.4f, 0.6f, 0.8f), 
+        glm::vec3(0.5f, 0.7f, 0.9f), 
+        glm::vec3(0.3f, 0.5f, 0.7f), 
+        160.0f
+    );
+
+    // NEPTUNO
+    Sphere neptune(1.6f);
+    neptune.setMaterial(
+        glm::vec3(0.1f, 0.1f, 0.8f), 
+        glm::vec3(0.2f, 0.2f, 1.0f), 
+        glm::vec3(0.1f, 0.1f, 0.6f), 
+        170.0f
+    );
+
+
     // Cargamos la misma textura para la Tierra [cite: 161, 164]
+    mercury.loadTexture("textures/2k_mercury.jpg");
+    venus.loadTexture("textures/2k_venus_surface.jpg");
     earth.loadTexture("textures/2k_earth_daymap.jpg");
+    mars.loadTexture("textures/2k_mars.jpg");
+    jupyter.loadTexture("textures/2k_jupiter.jpg");
+    saturn.loadTexture("textures/2k_saturn.jpg");
+    uranus.loadTexture("textures/2k_uranus.jpg");
+    neptune.loadTexture("textures/2k_neptune.jpg");
 
     updateCamera();
 
@@ -100,15 +192,53 @@ int main() {
         shaderEsfera.setVec3("La", glm::value_ptr(La));
         shaderEsfera.setVec3("Ld", glm::value_ptr(Ld));
         shaderEsfera.setVec3("Le", glm::value_ptr(Le));
+        
+        // ========================================================
+        // Dibujar SOL
+        sun.Draw(shaderEsfera.ID, currentTime, glm::vec3(0.0f), glm::vec3(2.0f));
 
-        // Dibujar Sol [cite: 266]
-        sun.Draw(shaderEsfera.ID, currentTime, glm::vec3(0.0f), glm::vec3(1.0f));
+        // =======================================================
+        // Dibujar los planetas
 
-        // Dibujar Tierra orbitando [cite: 266]
-        float orbitRadius = 5.0f;
-        float x = sin(currentTime * 0.5f) * orbitRadius;
-        float z = cos(currentTime * 0.5f) * orbitRadius;
-        earth.Draw(shaderEsfera.ID, currentTime, glm::vec3(x, 0.0f, z), glm::vec3(0.4f));
+        // MERCURIO
+        float xM = sin(currentTime * orbitalSpeedM) * orbitRadiusM;
+        float zM = cos(currentTime * orbitalSpeedM) * orbitRadiusM;
+        mercury.Draw(shaderEsfera.ID, currentTime, glm::vec3(xM, 0.0f, zM), glm::vec3(0.15f));
+        
+        // VENUS
+        float xV = sin(currentTime * orbitalSpeedV) * orbitRadiusV;
+        float zV = cos(currentTime * orbitalSpeedV) * orbitRadiusV;
+        venus.Draw(shaderEsfera.ID, currentTime, glm::vec3(xV, 0.0f, zV), glm::vec3(0.38f));
+        
+        // TIERRA
+        float xE = sin(currentTime * orbitalSpeedE) * orbitRadiusE;
+        float zE = cos(currentTime * orbitalSpeedE) * orbitRadiusE;
+        earth.Draw(shaderEsfera.ID, currentTime, glm::vec3(xE, 0.0f, zE), glm::vec3(0.4f));
+        
+        // MARTE
+        float xMa = sin(currentTime * orbitalSpeedMa) * orbitRadiusMa;
+        float zMa = cos(currentTime * orbitalSpeedMa) * orbitRadiusMa;
+        mars.Draw(shaderEsfera.ID, currentTime, glm::vec3(xMa, 0.0f, zMa), glm::vec3(0.21f));
+        
+        // JÚPITER
+        float xJ = sin(currentTime * orbitalSpeedJ) * orbitRadiusJ;
+        float zJ = cos(currentTime * orbitalSpeedJ) * orbitRadiusJ;
+        jupyter.Draw(shaderEsfera.ID, currentTime, glm::vec3(xJ, 0.0f, zJ), glm::vec3(1.65f));
+        
+        // SATURNO
+        float xS = sin(currentTime * orbitalSpeedS) * orbitRadiusS;
+        float zS = cos(currentTime * orbitalSpeedS) * orbitRadiusS;
+        saturn.Draw(shaderEsfera.ID, currentTime, glm::vec3(xS, 0.0f, zS), glm::vec3(1.4f));
+        
+        // URANO
+        float xU = sin(currentTime * orbitalSpeedU) * orbitRadiusU;
+        float zU = cos(currentTime * orbitalSpeedU) * orbitRadiusU;
+        uranus.Draw(shaderEsfera.ID, currentTime, glm::vec3(xU, 0.0f, zU), glm::vec3(0.55f));
+        
+        // NEPTUNO
+        float xN = sin(currentTime * orbitalSpeedN) * orbitRadiusN;
+        float zN = cos(currentTime * orbitalSpeedN) * orbitRadiusN;
+        neptune.Draw(shaderEsfera.ID, currentTime, glm::vec3(xN, 0.0f, zN), glm::vec3(0.52f));
 
         app.refrescar();
     }
