@@ -12,7 +12,7 @@ const unsigned int SCR_WIDTH = 1000;
 const unsigned int SCR_HEIGHT = 800;
 
 float cameraAngleX = 0.0f;
-float cameraDistance = 70.0f; // 30.0f por defecto
+float cameraDistance = 30.0f; // 30.0f por defecto
 glm::vec3 cameraPos;
 glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -85,6 +85,11 @@ int main() {
     float orbitalSpeedU = 0.08f;  // Urano
     float orbitalSpeedN = 0.05f;  // Neptuno
 
+    // PARÁMETROS DE LA LUNA
+    // Parámetros de la órbita de la Luna alrededor de la Tierra
+    float moonOrbitRadius = 1.5f; // Distancia de la Luna a la Tierra
+    float moonOrbitalSpeed = 5.0f; // Velocidad orbital de la Luna (más rápido que la Tierra alrededor del Sol)
+
     // CONFIGURACIÓN DE PLANETAS
 
     Sphere mercury(0.05f);
@@ -155,6 +160,17 @@ int main() {
         170.0f
     );
 
+    // ---------------------------------------------------------
+    // 3. CONFIGURACIÓN DE LA LUNA
+    // ---------------------------------------------------------
+    Sphere moon(0.5f); // Rotación sobre su eje (si queremos que siempre mueva la misma cara, podríamos ajustar)
+    moon.setMaterial(
+        glm::vec3(0.2f, 0.2f, 0.2f), 
+        glm::vec3(0.5f, 0.5f, 0.5f), 
+        glm::vec3(0.1f, 0.1f, 0.1f), 
+        50.0f
+    );
+
 
     // Cargamos la misma textura para la Tierra [cite: 161, 164]
     mercury.loadTexture("textures/2k_mercury.jpg");
@@ -166,6 +182,7 @@ int main() {
     uranus.loadTexture("textures/2k_uranus.jpg");
     neptune.loadTexture("textures/2k_neptune.jpg");
 
+    moon.loadTexture("textures/2k_moon.jpg");
     updateCamera();
 
     float lastFrame = 0.0f;
@@ -239,6 +256,13 @@ int main() {
         float xN = sin(currentTime * orbitalSpeedN) * orbitRadiusN;
         float zN = cos(currentTime * orbitalSpeedN) * orbitRadiusN;
         neptune.Draw(shaderEsfera.ID, currentTime, glm::vec3(xN, 0.0f, zN), glm::vec3(0.52f));
+
+
+         // LUNA: orbita alrededor de la Tierra
+        // La posición de la Luna es la posición de la Tierra más un desplazamiento circular
+        float moonX = xE + sin(currentTime * moonOrbitalSpeed) * moonOrbitRadius;
+        float moonZ = zE + cos(currentTime * moonOrbitalSpeed) * moonOrbitRadius;
+        moon.Draw(shaderEsfera.ID, currentTime, glm::vec3(moonX, 0.0f, moonZ), glm::vec3(0.1f)); // La Luna es más pequeña
 
         app.refrescar();
     }
