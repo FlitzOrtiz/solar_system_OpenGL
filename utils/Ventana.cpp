@@ -16,8 +16,14 @@ Ventana::Ventana(int ancho, int alto, const char* titulo) {
     glEnable(GL_DEPTH_TEST);
 }
 
-Ventana::~Ventana() { glfwTerminate(); }
-bool Ventana::debeCerrar() { return glfwWindowShouldClose(window); }
+Ventana::~Ventana() {
+    glfwTerminate();
+}
+
+bool Ventana::debeCerrar() { 
+    return glfwWindowShouldClose(window);
+}
+
 void Ventana::refrescar() {
     glfwSwapBuffers(window);
     glfwPollEvents();

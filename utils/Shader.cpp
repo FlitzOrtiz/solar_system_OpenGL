@@ -3,6 +3,7 @@
 Shader::Shader(const char* vertexPath, const char* fragmentPath) {
     std::string vertexCode, fragmentCode;
     std::ifstream vShaderFile, fShaderFile;
+
     vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
@@ -41,7 +42,18 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath) {
     glDeleteShader(fragment);
 }
 
-void Shader::use() { glUseProgram(ID); }
-void Shader::setVec3(const std::string &name, float* values) { glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, values); }
-void Shader::setMat4(const std::string &name, float* mat) { glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, mat); }
-void Shader::setFloat(const std::string &name, float value) { glUniform1f(glGetUniformLocation(ID, name.c_str()), value); }
+void Shader::use() { 
+    glUseProgram(ID);
+}
+
+void Shader::setVec3(const std::string &name, float* values) {
+    glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, values);
+}
+
+void Shader::setMat4(const std::string &name, float* mat) {
+    glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, mat);
+}
+
+void Shader::setFloat(const std::string &name, float value) { 
+    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+}

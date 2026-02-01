@@ -43,7 +43,7 @@ void Sphere::loadTexture(const char* path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Corregir la inversión del eje Y típica de los archivos de imagen [cite: 337, 339]
-    stbi_set_flip_vertically_on_load(true);
+    // stbi_set_flip_vertically_on_load(true);
 
     int width, height, nrChannels;
     // Cargar datos de la imagen [cite: 161, 163]
@@ -88,7 +88,7 @@ void Sphere::subdivide(glm::vec3 a, glm::vec3 b, glm::vec3 c, int depth) {
         normals.push_back(normalizeToSphere(b));
         normals.push_back(normalizeToSphere(c));
 
-        // Cálculo de UVs para mapeo equirectangular [cite: 45, 46, 51]
+        // Cálculo de UVs para mapeo equirectangular https://es.wikipedia.org/wiki/Mapeado_UV
         for (auto& p : {a, b, c}) {
             float u = 0.5f + (atan2(p.z, p.x) / (2.0f * 3.14159265359f));
             float v = 0.5f - (asin(p.y) / 3.14159265359f);
@@ -107,7 +107,9 @@ void Sphere::subdivide(glm::vec3 a, glm::vec3 b, glm::vec3 c, int depth) {
 }
 
 void Sphere::generateGeometry() {
-    vertices.clear(); normals.clear(); texCoords.clear();
+    vertices.clear();
+    normals.clear();
+    texCoords.clear();
     glm::vec3 v0 = normalizeToSphere(glm::vec3(1.0f, 1.0f, 1.0f));
     glm::vec3 v1 = normalizeToSphere(glm::vec3(-1.0f, -1.0f, 1.0f));
     glm::vec3 v2 = normalizeToSphere(glm::vec3(-1.0f, 1.0f, -1.0f));

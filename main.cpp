@@ -16,7 +16,7 @@ float cameraDistance = 30.0f; // 30.0f por defecto
 glm::vec3 cameraPos;
 glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-float rotationSpeed = 60.0f; 
+float traslationSpeed = 60.0f; 
 
 glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
 glm::vec3 La(1.0f, 1.0f, 1.0f); 
@@ -34,11 +34,21 @@ void processInput(GLFWwindow* window, float deltaTime) {
         glfwSetWindowShouldClose(window, true);
     
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        cameraAngleX -= glm::radians(rotationSpeed) * deltaTime;
+        cameraAngleX -= glm::radians(traslationSpeed) * deltaTime;
         updateCamera();
     }
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        cameraAngleX += glm::radians(rotationSpeed) * deltaTime;
+        cameraAngleX += glm::radians(traslationSpeed) * deltaTime;
+        updateCamera();
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        cameraDistance -= 10.0f * deltaTime;
+        if (cameraDistance < 5.0f) cameraDistance = 5.0f; 
+        updateCamera();
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        cameraDistance += 10.0f * deltaTime;
+        if (cameraDistance > 100.0f) cameraDistance = 100.0f; 
         updateCamera();
     }
 }
@@ -75,15 +85,15 @@ int main() {
     float orbitRadiusU = 30.0f;   // Urano
     float orbitRadiusN = 40.0f;   // Neptuno
     
-    // DEFINIR VELOCIDADES ORBITALES
-    float orbitalSpeedM = 4.0f;   // Mercurio
-    float orbitalSpeedV = 2.5f;   // Venus
-    float orbitalSpeedE = 1.0f;   // Tierra - base
-    float orbitalSpeedMa = 0.75f; // Marte
-    float orbitalSpeedJ = 0.25f;  // Júpiter
-    float orbitalSpeedS = 0.15f;  // Saturno
-    float orbitalSpeedU = 0.08f;  // Urano
-    float orbitalSpeedN = 0.05f;  // Neptuno
+    // DEFINIR VELOCIDADES ORBITALES (la mitad)
+    float orbitalSpeedM = 2.0f;     // Mercurio (4.0f / 2)
+    float orbitalSpeedV = 1.25f;    // Venus (2.5f / 2)
+    float orbitalSpeedE = 0.5f;     // Tierra - base (1.0f / 2)
+    float orbitalSpeedMa = 0.375f;  // Marte (0.75f / 2)
+    float orbitalSpeedJ = 0.125f;   // Júpiter (0.25f / 2)
+    float orbitalSpeedS = 0.075f;   // Saturno (0.15f / 2)
+    float orbitalSpeedU = 0.04f;    // Urano (0.08f / 2)
+    float orbitalSpeedN = 0.025f;   // Neptuno (0.05f / 2)
 
     // PARÁMETROS DE LA LUNA
     // Parámetros de la órbita de la Luna alrededor de la Tierra
@@ -199,7 +209,7 @@ int main() {
         shaderEsfera.use();
 
         glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, cameraUp);
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 1000.0f);
 
         shaderEsfera.setMat4("view", glm::value_ptr(view));
         shaderEsfera.setMat4("projection", glm::value_ptr(projection));
