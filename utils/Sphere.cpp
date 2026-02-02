@@ -144,8 +144,14 @@ void Sphere::setupMesh() {
 }
 
 void Sphere::Draw(unsigned int shaderProgram, float time, glm::vec3 position, glm::vec3 scale) {
-    currentAngle = time * selfRotationSpeed;
-    glm::vec3 rotationEuler = glm::vec3(0.0f, currentAngle, 0.0f);
+
+
+    const float TWO_PI = 2.0f * 3.14159265359f;  // 360° en radianes
+    // Normalizar ángulo a [0, 2π) para evitar pérdida de precisión en sin/cos
+    currentAngle = fmod(time * selfRotationSpeed, TWO_PI);
+    if (currentAngle < 0.0f) currentAngle += TWO_PI;  // Asegurar positivo
+        
+    glm::vec3 rotationEuler = glm::vec3(0.0f, currentAngle, 0.0f);  // Rotación solo en Y
 
     glUniform3fv(glGetUniformLocation(shaderProgram, "uDesplazamiento"), 1, glm::value_ptr(position));
     glUniform3fv(glGetUniformLocation(shaderProgram, "uAngulos"), 1, glm::value_ptr(rotationEuler));

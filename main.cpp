@@ -10,7 +10,6 @@
 // Configuración de la ventana
 const unsigned int SCR_WIDTH = 1000;
 const unsigned int SCR_HEIGHT = 800;
-
 // Parámetros de la cámara
 float cameraAngleX = 0.0f; // Ángulo inicial en el eje X
 float cameraDistance = 30.0f; // Distancia inicial desde el origen
@@ -30,6 +29,13 @@ void updateCamera() { // Actualizar la posición de la cámara según el ángulo
     cameraPos.x = cameraDistance * sin(cameraAngleX);
     cameraPos.y = cameraDistance * 0.5f; 
     cameraPos.z = cameraDistance * cos(cameraAngleX);
+}
+
+float normalizeAngle(float angle) {
+    const float TWO_PI = 2.0f * 3.14159265359f;
+    angle = fmod(angle, TWO_PI);
+    if (angle < 0.0f) angle += TWO_PI;
+    return angle;
 }
 
 void processInput(GLFWwindow* window, float deltaTime) { //deltaTime : tiempo entre frames
@@ -223,50 +229,61 @@ int main() {
         // Dibujar los planetas
 
         // MERCURIO
-        float xM = sin(currentTime * orbitalSpeedM) * orbitRadiusM;
-        float zM = cos(currentTime * orbitalSpeedM) * orbitRadiusM;
+        // Normalizar ángulo orbital para mantener precisión en funciones trigonométricas
+        float orbitAngleM = normalizeAngle(currentTime * orbitalSpeedM);
+        // Calcular posición en órbita circular usando ángulo normalizado
+        float xM = sin(orbitAngleM) * orbitRadiusM;  // Coordenada X
+        float zM = cos(orbitAngleM) * orbitRadiusM;  // Coordenada Z
         mercury.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xM, 0.0f, zM), glm::vec3(0.15f));
         
         // VENUS
-        float xV = sin(currentTime * orbitalSpeedV) * orbitRadiusV;
-        float zV = cos(currentTime * orbitalSpeedV) * orbitRadiusV;
+        float orbitAngleV = normalizeAngle(currentTime * orbitalSpeedV);
+        float xV = sin(orbitAngleV) * orbitRadiusV;
+        float zV = cos(orbitAngleV) * orbitRadiusV;
         venus.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xV, 0.0f, zV), glm::vec3(0.38f));
         
         // TIERRA
-        float xE = sin(currentTime * orbitalSpeedE) * orbitRadiusE;
-        float zE = cos(currentTime * orbitalSpeedE) * orbitRadiusE;
+        float orbitAngleE = normalizeAngle(currentTime * orbitalSpeedE);
+        float xE = sin(orbitAngleE) * orbitRadiusE;
+        float zE = cos(orbitAngleE) * orbitRadiusE;
         earth.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xE, 0.0f, zE), glm::vec3(0.4f));
         
         // MARTE
-        float xMa = sin(currentTime * orbitalSpeedMa) * orbitRadiusMa;
-        float zMa = cos(currentTime * orbitalSpeedMa) * orbitRadiusMa;
+        float orbitAngleMa = normalizeAngle(currentTime * orbitalSpeedMa);
+        float xMa = sin(orbitAngleMa) * orbitRadiusMa;
+        float zMa = cos(orbitAngleMa) * orbitRadiusMa;
         mars.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xMa, 0.0f, zMa), glm::vec3(0.21f));
         
         // JÚPITER
-        float xJ = sin(currentTime * orbitalSpeedJ) * orbitRadiusJ;
-        float zJ = cos(currentTime * orbitalSpeedJ) * orbitRadiusJ;
+        float orbitAngleJ = normalizeAngle(currentTime * orbitalSpeedJ);
+        float xJ = sin(orbitAngleJ) * orbitRadiusJ;
+        float zJ = cos(orbitAngleJ) * orbitRadiusJ;
         jupyter.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xJ, 0.0f, zJ), glm::vec3(1.65f));
         
         // SATURNO
-        float xS = sin(currentTime * orbitalSpeedS) * orbitRadiusS;
-        float zS = cos(currentTime * orbitalSpeedS) * orbitRadiusS;
+        float orbitAngleS = normalizeAngle(currentTime * orbitalSpeedS);
+        float xS = sin(orbitAngleS) * orbitRadiusS;
+        float zS = cos(orbitAngleS) * orbitRadiusS;
         saturn.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xS, 0.0f, zS), glm::vec3(1.4f));
         
         // URANO
-        float xU = sin(currentTime * orbitalSpeedU) * orbitRadiusU;
-        float zU = cos(currentTime * orbitalSpeedU) * orbitRadiusU;
+        float orbitAngleU = normalizeAngle(currentTime * orbitalSpeedU);
+        float xU = sin(orbitAngleU) * orbitRadiusU;
+        float zU = cos(orbitAngleU) * orbitRadiusU;
         uranus.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xU, 0.0f, zU), glm::vec3(0.55f));
         
         // NEPTUNO
-        float xN = sin(currentTime * orbitalSpeedN) * orbitRadiusN;
-        float zN = cos(currentTime * orbitalSpeedN) * orbitRadiusN;
+        float orbitAngleN = normalizeAngle(currentTime * orbitalSpeedN);
+        float xN = sin(orbitAngleN) * orbitRadiusN;
+        float zN = cos(orbitAngleN) * orbitRadiusN;
         neptune.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(xN, 0.0f, zN), glm::vec3(0.52f));
 
 
         // LUNA: orbita alrededor de la Tierra
         // La posición de la Luna es la posición de la Tierra más un desplazamiento circular
-        float moonX = xE + sin(currentTime * moonOrbitalSpeed) * moonOrbitRadius;
-        float moonZ = zE + cos(currentTime * moonOrbitalSpeed) * moonOrbitRadius;
+        float moonOrbitAngle = normalizeAngle(currentTime * moonOrbitalSpeed);
+        float moonX = xE + sin(moonOrbitAngle) * moonOrbitRadius;
+        float moonZ = zE + cos(moonOrbitAngle) * moonOrbitRadius;
         moon.Draw(sphereShader.shaderProgram, currentTime, glm::vec3(moonX, 0.0f, moonZ), glm::vec3(0.1f)); // La Luna es más pequeña
 
         app.refrescar();
