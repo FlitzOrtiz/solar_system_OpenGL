@@ -24,6 +24,8 @@ glm::vec3 La(1.0f, 1.0f, 1.0f);
 glm::vec3 Ld(1.0f, 1.0f, 1.0f); 
 glm::vec3 Le(1.0f, 1.0f, 1.0f); 
 
+const float DAYS_PER_SECOND = 6.0875f; // Aproximadamente 6.0875 días terrestres por segundo
+
 void updateCamera() { // Actualizar la posición de la cámara según el ángulo y la distancia
     cameraPos.x = cameraDistance * sin(cameraAngleX);
     cameraPos.y = cameraDistance * 0.5f; 
@@ -69,7 +71,9 @@ int main() {
     // Cargamos la textura para el Sol
     sun.loadTexture("textures/2k_sun.jpg");
 
-    // Configuracion de planetas
+    // 365.25 dias / 60 segundos = 6.0875 dias simulados por cada segundo real
+    const float DAYS_PER_SECOND = 6.0875f; 
+    const float PI = 3.14159265359f;
 
     // Radios de Orbitas
     float orbitRadiusM = 3.0f;    // Mercurio
@@ -81,27 +85,26 @@ int main() {
     float orbitRadiusU = 30.0f;   // Urano
     float orbitRadiusN = 40.0f;   // Neptuno
 
-    //INFO: https://rinconeducativo.com/datos/Astronomi%CC%81a/Datos%20astrono%CC%81micos/Sistema%20solar/velocidad%20de%20los%20planetas%20del%20sistema%20solar.pdf
-    // Base: 1 año (Tierra) = 60 segundos -> orbitalSpeedE (2pi/60) = 0.10472f
-    float orbitalSpeedE  = 0.10472f; // Velocidad
+    // Base: La Tierra recorre 2*PI en 365.25 dias. Multiplicamos por el factor dias/seg.
+    float orbitalSpeedE  = (2.0f * PI / 365.25f) * DAYS_PER_SECOND;
     
-    // Velocidades Orbitales (ángulos por unidad de tiempo)
-    float orbitalSpeedM  = orbitalSpeedE * (47.87f / 29.44f); // Mercurio: ~0.1702f
-    float orbitalSpeedV  = orbitalSpeedE * (35.02f / 29.44f); // Venus: ~0.1245f
-    float orbitalSpeedMa = orbitalSpeedE * (24.13f / 29.44f); // Marte: ~0.0858f
-    float orbitalSpeedJ  = orbitalSpeedE * (13.07f / 29.44f); // Júpiter: ~0.0464f
-    float orbitalSpeedS  = orbitalSpeedE * (9.67f / 29.44f);  // Saturno: ~0.0344f
-    float orbitalSpeedU  = orbitalSpeedE * (6.84f / 29.44f);  // Urano: ~0.0243f
-    float orbitalSpeedN  = orbitalSpeedE * (5.48f / 29.44f);  // Neptuno: ~0.0195f
+    // Velocidades proporcionales segun km/s de la tabla NASA
+    float orbitalSpeedM  = orbitalSpeedE * (47.87f / 29.44f); // Mercurio
+    float orbitalSpeedV  = orbitalSpeedE * (35.02f / 29.44f); // Venus
+    float orbitalSpeedMa = orbitalSpeedE * (24.13f / 29.44f); // Marte
+    float orbitalSpeedJ  = orbitalSpeedE * (13.07f / 29.44f); // Júpiter
+    float orbitalSpeedS  = orbitalSpeedE * (9.67f / 29.44f);  // Saturno
+    float orbitalSpeedU  = orbitalSpeedE * (6.84f / 29.44f);  // Urano
+    float orbitalSpeedN  = orbitalSpeedE * (5.48f / 29.44f);  // Neptuno
 
-    // Luna
-    // Parámetros de la órbita de la Luna alrededor de la Tierra
-    float moonOrbitRadius = 1.5f; // Distancia de la Luna a la Tierra
-    float moonOrbitalSpeed = 1.3927f; // Velocidad orbital de la Luna
+    // Luna: Orbita ~13.3 veces por año terrestre
+    float moonOrbitRadius = 1.5f; 
+    float moonOrbitalSpeed = orbitalSpeedE * 13.3f;
 
-    // Configuracion Materiales y Velocidades de Rotación Propia de los Planetas
-    // Base: La Tierra rota una vez por segundo
-    float selfRotationSpeedE  = 6.2831f;
+    // Base: La Tierra rota 2*PI en 1 dia. Multiplicamos por el factor dias/seg.
+    float selfRotationSpeedE  = (2.0f * PI) * DAYS_PER_SECOND; // ~38.248f
+
+    // Implementacion de Esferas con proporciones km/s ecuatorial
 
     Sphere mercury(selfRotationSpeedE * (0.0030f / 0.4651f));
     mercury.setMaterial(
@@ -111,14 +114,13 @@ int main() {
         1.0f
     );
 
-    Sphere venus(-selfRotationSpeedE * (0.0018f / 0.4651f));
+    Sphere venus(-selfRotationSpeedE * (0.0018f / 0.4651f)); 
     venus.setMaterial(
         glm::vec3(0.45f, 0.35f, 0.10f), 
         glm::vec3(0.50f, 0.40f, 0.15f), 
         glm::vec3(0.25f, 0.20f, 0.10f), 
         1.2f
     );
-
 
     Sphere earth(selfRotationSpeedE);
     earth.setMaterial(
@@ -128,7 +130,7 @@ int main() {
         1.5f
     );
 
-    Sphere mars(selfRotationSpeedE * (0.2408f / 0.4651f));
+    Sphere mars(selfRotationSpeedE * (0.2408f / 0.4651f)); //
     mars.setMaterial(
         glm::vec3(0.30f, 0.10f, 0.05f), 
         glm::vec3(0.40f, 0.15f, 0.05f), 
@@ -136,7 +138,7 @@ int main() {
         1.3f
     );
 
-    Sphere jupyter(selfRotationSpeedE * (12.5720f / 0.4651f));
+    Sphere jupyter(selfRotationSpeedE * (12.5720f / 0.4651f)); //
     jupyter.setMaterial(
         glm::vec3(0.40f, 0.20f, 0.05f),  
         glm::vec3(0.45f, 0.25f, 0.10f), 
@@ -144,7 +146,7 @@ int main() {
         2.0f
     );
 
-    Sphere saturn(selfRotationSpeedE * (10.0179f / 0.4651f));
+    Sphere saturn(selfRotationSpeedE * (10.0179f / 0.4651f)); //
     saturn.setMaterial(
         glm::vec3(0.45f, 0.40f, 0.30f), 
         glm::vec3(0.50f, 0.45f, 0.35f), 
@@ -152,9 +154,7 @@ int main() {
         1.8f
     );
 
-
-    // URANO
-    Sphere uranus(selfRotationSpeedE * (2.5875f / 0.4651f));
+    Sphere uranus(selfRotationSpeedE * (2.5875f / 0.4651f)); //
     uranus.setMaterial(
         glm::vec3(0.20f, 0.30f, 0.40f), 
         glm::vec3(0.25f, 0.35f, 0.45f), 
@@ -162,8 +162,7 @@ int main() {
         1.6f
     );
 
-    // NEPTUNO
-    Sphere neptune(selfRotationSpeedE * (2.6869f / 0.4651f));
+    Sphere neptune(selfRotationSpeedE * (2.6869f / 0.4651f)); //
     neptune.setMaterial(
         glm::vec3(0.05f, 0.05f, 0.40f), 
         glm::vec3(0.10f, 0.10f, 0.50f), 
@@ -171,8 +170,8 @@ int main() {
         1.7f
     );
 
-    // LUNA
-    Sphere moon(moonOrbitalSpeed);
+    // Luna acoplada: su rotacion es igual a su traslacion alrededor de la Tierra
+    Sphere moon(moonOrbitalSpeed); 
     moon.setMaterial(
         glm::vec3(0.10f, 0.10f, 0.10f), 
         glm::vec3(0.25f, 0.25f, 0.25f), 
