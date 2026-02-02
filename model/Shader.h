@@ -9,7 +9,7 @@
 
 class Shader {
 public:
-    unsigned int ID;
+    unsigned int shaderProgram;
     Shader(const char* vertexPath, const char* fragmentPath);
     void use();
     // Utilidades para enviar uniforms

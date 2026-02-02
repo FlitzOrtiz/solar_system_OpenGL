@@ -24,27 +24,27 @@ public:
     void Draw(unsigned int shaderProgram, float time, glm::vec3 position, glm::vec3 scale);
 
 private:
-    // --- Datos Geométricos ---
+    // Datos Geométricos
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texCoords; // Coordenadas U, V
 
-    // --- Objetos de OpenGL ---
+    // Objetos de OpenGL
     unsigned int VAO;
     unsigned int VBO, normalVBO, texVBO;
     unsigned int textureID; // ID de la textura cargada en la GPU
 
-    // --- Estado de la Esfera ---
+    // Estado de la Esfera
     float selfRotationSpeed;
     float currentAngle;
 
-    // --- Propiedades del Material ---
+    // Propiedades del Material
     glm::vec3 Ka; // Ambiental
     glm::vec3 Kd; // Difusa
     glm::vec3 Ke; // Especular
     float alpha;  // Brillo (Shininess)
 
-    // --- Funciones Internas de Construcción ---
+    // Funciones Internas de Construcción
     void generateGeometry();
     void subdivide(glm::vec3 a, glm::vec3 b, glm::vec3 c, int depth);
     void setupMesh();

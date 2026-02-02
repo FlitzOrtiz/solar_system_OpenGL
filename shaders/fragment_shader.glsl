@@ -10,28 +10,39 @@ uniform vec3 v_pos;   // Posición cámara
 uniform vec3 La, Ld, Le; 
 uniform vec3 Ka, Kd, Ke; 
 uniform float alpha; 
-uniform sampler2D ourTexture; // La textura del planeta [cite: 259]
+uniform sampler2D ourTexture; // La textura del planeta
 
 void main() {
+    // 1. Preparación de vectores (Phong Estándar)
     vec3 n = normalize(Normal);
+    float d = length(p0 - FragPos); 
     vec3 l = normalize(p0 - FragPos);
     vec3 v = normalize(v_pos - FragPos);
     vec3 r = reflect(-l, n);
 
-    // 1. Muestrear el color de la textura [cite: 262, 263]
-    vec4 texColor = texture(ourTexture, TexCoord);
+    vec3 texColor = texture(ourTexture, TexCoord).rgb;
 
-    // 2. Cálculo de iluminación sin división por distancia (para que no se apague)
-    vec3 ambient = Ka * La * texColor.rgb;
+    // 2. NORMALIZACIÓN BASADA EN EL PLANETA LEJANO
+    float d_max = 40.52;      // Distancia de Neptuno en tu código
+    float intensity_min = 0.09; // El brillo mínimo que quieres en Neptuno (9%)
     
-    // Difusa: Si es el Sol (distancia casi 0), forzamos iluminación completa
-    float dist = length(p0 - FragPos);
-    float diff = max(dot(n, l), 0.0);
+    // Calculamos la potencia necesaria para que Neptuno se vea al 9%
+    float lightPower = intensity_min * (d_max * d_max);
     
-    if(dist < 0.1) diff = 1.0; // El Sol siempre brilla [cite: 23]
+    // Aplicamos la atenuación física obligatoria
+    float attenuation = lightPower / (d * d);
 
-    vec3 diffuse = Kd * Ld * diff * texColor.rgb;
-    vec3 specular = Ke * Le * pow(max(dot(r, v), 0.0), alpha);
+    // Clamp para que Mercurio no se vea blanco puro (máximo 1.2 veces la luz original)
+    attenuation = clamp(attenuation, 0.0, 1.2);
+
+    // 3. COMPONENTES DE PHONG
+    vec3 ambient = Ka * La * texColor;
+    
+    float diffFactor = max(dot(n, l), 0.0);
+    vec3 diffuse = (Kd * Ld * diffFactor * texColor) * attenuation;
+    
+    float specFactor = pow(max(dot(r, v), 0.0), alpha);
+    vec3 specular = (Ke * Le * specFactor) * attenuation;
 
     FragColor = vec4(ambient + diffuse + specular, 1.0);
 }

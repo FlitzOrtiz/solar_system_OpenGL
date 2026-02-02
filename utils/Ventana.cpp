@@ -4,7 +4,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 Ventana::Ventana(int ancho, int alto, const char* titulo) {
     if (!glfwInit()) exit(-1);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // OpenGL 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -13,10 +13,10 @@ Ventana::Ventana(int ancho, int alto, const char* titulo) {
         glfwTerminate();
         exit(-1);
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window); // Establecer el contexto de OpenGL
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glewInit();
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST); // Habilitar prueba de profundidad
 }
 
 Ventana::~Ventana() {
@@ -28,8 +28,8 @@ bool Ventana::debeCerrar() {
 }
 
 void Ventana::refrescar() {
-    glfwSwapBuffers(window);
-    glfwPollEvents();
+    glfwSwapBuffers(window); // Intercambiar los buffers
+    glfwPollEvents(); // Procesar eventos de entrada
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

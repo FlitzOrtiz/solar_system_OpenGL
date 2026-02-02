@@ -7,7 +7,7 @@
 #include <vector>
 #include <iostream>
 
-// Definición para que stb_image funcione como implementación [cite: 156, 158]
+// Libreria de carga de imágenes
 #define STB_IMAGE_IMPLEMENTATION
 #include "../stb_image.h"
 
@@ -31,22 +31,19 @@ Sphere::~Sphere() {
     if (textureID != 0) glDeleteTextures(1, &textureID);
 }
 
-// Carga de textura optimizada según el manual [cite: 152, 153]
+// Carga de textura optimizada según el manual
 void Sphere::loadTexture(const char* path) {
-    glGenTextures(1, &textureID); // Generar ID [cite: 169]
-    glBindTexture(GL_TEXTURE_2D, textureID); // Vincular textura [cite: 175, 182]
+    glGenTextures(1, &textureID); // Generar ID
+    glBindTexture(GL_TEXTURE_2D, textureID); // Vincular textura
 
-    // ConfigurarWrapping y Filtering para evitar artefactos [cite: 85, 116, 142]
+    // ConfigurarWrapping y Filtering para evitar artefactos
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // Corregir la inversión del eje Y típica de los archivos de imagen [cite: 337, 339]
-    // stbi_set_flip_vertically_on_load(true);
-
     int width, height, nrChannels;
-    // Cargar datos de la imagen [cite: 161, 163]
+    // Cargar datos de la imagen
     unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
 
     if (data) {
@@ -56,14 +53,14 @@ void Sphere::loadTexture(const char* path) {
         else if (nrChannels == 3) format = GL_RGB;
         else if (nrChannels == 4) format = GL_RGBA;
 
-        // Generar la textura en la GPU con el formato detectado [cite: 178, 211]
+        // Generar la textura en la GPU con el formato detectado
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D); // Generar mipmaps automáticamente [cite: 194, 195]
+        glGenerateMipmap(GL_TEXTURE_2D); // Generar mipmaps automáticamente
     } else {
         std::cout << "ERROR::SPHERE::TEXTURE_FAILED_AT_PATH: " << path << std::endl;
     }
 
-    stbi_image_free(data); // Liberar memoria del CPU tras la carga [cite: 196, 197]
+    stbi_image_free(data); // Liberar memoria del CPU tras la carga
 }
 
 void Sphere::setMaterial(glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) {
@@ -130,19 +127,16 @@ void Sphere::setupMesh() {
 
     glBindVertexArray(VAO);
 
-    // 1. Posiciones (Location 0)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // 2. Normales (Location 1)
     glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(1);
 
-    // 3. Coordenadas de Textura (Location 2) [cite: 232, 239]
     glBindBuffer(GL_ARRAY_BUFFER, texVBO);
     glBufferData(GL_ARRAY_BUFFER, texCoords.size() * sizeof(glm::vec2), texCoords.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
@@ -162,11 +156,11 @@ void Sphere::Draw(unsigned int shaderProgram, float time, glm::vec3 position, gl
     glUniform3fv(glGetUniformLocation(shaderProgram, "Ke"), 1, glm::value_ptr(this->Ke));
     glUniform1f(glGetUniformLocation(shaderProgram, "alpha"), this->alpha);
 
-    // Gestión de unidades de textura según el manual [cite: 291, 292, 293]
+    // Gestión de unidades de textura
     if (textureID != 0) {
         glActiveTexture(GL_TEXTURE0); // Activar la unidad 0 antes de vincular 
         glBindTexture(GL_TEXTURE_2D, textureID);
-        // Asignar el sampler del shader a la unidad 0 [cite: 254, 330]
+        // Asignar el sampler del shader a la unidad 0
         glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
     }
 
