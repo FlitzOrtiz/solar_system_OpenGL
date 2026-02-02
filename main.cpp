@@ -107,7 +107,7 @@ int main() {
         glm::vec3(0.5f, 0.5f, 0.5f), 
         glm::vec3(0.7f, 0.7f, 0.7f), 
         glm::vec3(0.3f, 0.3f, 0.3f), 
-        100.0f
+        10.0f
     );
 
     Sphere venus(-0.02f);
@@ -115,7 +115,7 @@ int main() {
         glm::vec3(0.9f, 0.7f, 0.2f), 
         glm::vec3(1.0f, 0.8f, 0.3f), 
         glm::vec3(0.5f, 0.4f, 0.2f), 
-        120.0f
+        12.0f
     );
 
 
@@ -124,7 +124,7 @@ int main() {
         glm::vec3(0.0f, 0.1f, 0.2f), 
         glm::vec3(0.0f, 0.4f, 0.8f), 
         glm::vec3(0.5f, 0.5f, 0.5f), 
-        150.0f
+        15.0f
     );
 
     Sphere mars(0.95f);
@@ -132,7 +132,7 @@ int main() {
         glm::vec3(0.6f, 0.2f, 0.1f), 
         glm::vec3(0.8f, 0.3f, 0.1f), 
         glm::vec3(0.4f, 0.2f, 0.1f), 
-        130.0f
+        13.0f
     );
 
     Sphere jupyter(2.5f);
@@ -140,7 +140,7 @@ int main() {
         glm::vec3(0.8f, 0.4f, 0.1f),  
         glm::vec3(0.9f, 0.5f, 0.2f), 
         glm::vec3(0.5f, 0.5f, 0.5f), 
-        200.0f
+        20.0f
     );
 
     Sphere saturn(2.3f);
@@ -148,7 +148,7 @@ int main() {
         glm::vec3(0.9f, 0.8f, 0.6f), 
         glm::vec3(1.0f, 0.9f, 0.7f), 
         glm::vec3(0.6f, 0.5f, 0.4f), 
-        180.0f
+        18.0f
     );
 
 
@@ -158,7 +158,7 @@ int main() {
         glm::vec3(0.4f, 0.6f, 0.8f), 
         glm::vec3(0.5f, 0.7f, 0.9f), 
         glm::vec3(0.3f, 0.5f, 0.7f), 
-        160.0f
+        16.0f
     );
 
     // NEPTUNO
@@ -167,7 +167,7 @@ int main() {
         glm::vec3(0.1f, 0.1f, 0.8f), 
         glm::vec3(0.2f, 0.2f, 1.0f), 
         glm::vec3(0.1f, 0.1f, 0.6f), 
-        170.0f
+        17.0f
     );
 
     // ---------------------------------------------------------
@@ -178,7 +178,7 @@ int main() {
         glm::vec3(0.2f, 0.2f, 0.2f), 
         glm::vec3(0.5f, 0.5f, 0.5f), 
         glm::vec3(0.1f, 0.1f, 0.1f), 
-        50.0f
+        5.0f
     );
 
 
