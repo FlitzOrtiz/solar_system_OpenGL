@@ -80,25 +80,30 @@ int main() {
     float orbitRadiusS = 22.0f;   // Saturno
     float orbitRadiusU = 30.0f;   // Urano
     float orbitRadiusN = 40.0f;   // Neptuno
+
+    //INFO: https://rinconeducativo.com/datos/Astronomi%CC%81a/Datos%20astrono%CC%81micos/Sistema%20solar/velocidad%20de%20los%20planetas%20del%20sistema%20solar.pdf
+    // Base: 1 año (Tierra) = 60 segundos -> orbitalSpeedE (2pi/60) = 0.10472f
+    float orbitalSpeedE  = 0.10472f; // Velocidad
     
     // Velocidades Orbitales (ángulos por unidad de tiempo)
-    float orbitalSpeedM = 2.0f;     // Mercurio
-    float orbitalSpeedV = 1.25f;    // Venus 
-    float orbitalSpeedE = 0.5f;     // Tierra
-    float orbitalSpeedMa = 0.375f;  // Marte
-    float orbitalSpeedJ = 0.125f;   // Júpiter
-    float orbitalSpeedS = 0.075f;   // Saturno
-    float orbitalSpeedU = 0.04f;    // Urano
-    float orbitalSpeedN = 0.025f;   // Neptuno
+    float orbitalSpeedM  = orbitalSpeedE * (47.87f / 29.44f); // Mercurio: ~0.1702f
+    float orbitalSpeedV  = orbitalSpeedE * (35.02f / 29.44f); // Venus: ~0.1245f
+    float orbitalSpeedMa = orbitalSpeedE * (24.13f / 29.44f); // Marte: ~0.0858f
+    float orbitalSpeedJ  = orbitalSpeedE * (13.07f / 29.44f); // Júpiter: ~0.0464f
+    float orbitalSpeedS  = orbitalSpeedE * (9.67f / 29.44f);  // Saturno: ~0.0344f
+    float orbitalSpeedU  = orbitalSpeedE * (6.84f / 29.44f);  // Urano: ~0.0243f
+    float orbitalSpeedN  = orbitalSpeedE * (5.48f / 29.44f);  // Neptuno: ~0.0195f
 
     // Luna
     // Parámetros de la órbita de la Luna alrededor de la Tierra
     float moonOrbitRadius = 1.5f; // Distancia de la Luna a la Tierra
-    float moonOrbitalSpeed = 5.0f; // Velocidad orbital de la Luna
-
+    float moonOrbitalSpeed = 1.3927f; // Velocidad orbital de la Luna
 
     // Configuracion Materiales y Velocidades de Rotación Propia de los Planetas
-    Sphere mercury(0.05f);
+    // Base: La Tierra rota una vez por segundo
+    float selfRotationSpeedE  = 6.2831f;
+
+    Sphere mercury(selfRotationSpeedE * (0.0030f / 0.4651f));
     mercury.setMaterial(
         glm::vec3(0.25f, 0.25f, 0.25f), 
         glm::vec3(0.35f, 0.35f, 0.35f), 
@@ -106,7 +111,7 @@ int main() {
         1.0f
     );
 
-    Sphere venus(-0.02f);
+    Sphere venus(-selfRotationSpeedE * (0.0018f / 0.4651f));
     venus.setMaterial(
         glm::vec3(0.45f, 0.35f, 0.10f), 
         glm::vec3(0.50f, 0.40f, 0.15f), 
@@ -115,7 +120,7 @@ int main() {
     );
 
 
-    Sphere earth(1.0f);
+    Sphere earth(selfRotationSpeedE);
     earth.setMaterial(
         glm::vec3(0.0f, 0.05f, 0.10f), 
         glm::vec3(0.0f, 0.20f, 0.40f), 
@@ -123,7 +128,7 @@ int main() {
         1.5f
     );
 
-    Sphere mars(0.95f);
+    Sphere mars(selfRotationSpeedE * (0.2408f / 0.4651f));
     mars.setMaterial(
         glm::vec3(0.30f, 0.10f, 0.05f), 
         glm::vec3(0.40f, 0.15f, 0.05f), 
@@ -131,7 +136,7 @@ int main() {
         1.3f
     );
 
-    Sphere jupyter(2.5f);
+    Sphere jupyter(selfRotationSpeedE * (12.5720f / 0.4651f));
     jupyter.setMaterial(
         glm::vec3(0.40f, 0.20f, 0.05f),  
         glm::vec3(0.45f, 0.25f, 0.10f), 
@@ -139,7 +144,7 @@ int main() {
         2.0f
     );
 
-    Sphere saturn(2.3f);
+    Sphere saturn(selfRotationSpeedE * (10.0179f / 0.4651f));
     saturn.setMaterial(
         glm::vec3(0.45f, 0.40f, 0.30f), 
         glm::vec3(0.50f, 0.45f, 0.35f), 
@@ -149,7 +154,7 @@ int main() {
 
 
     // URANO
-    Sphere uranus(1.5f);
+    Sphere uranus(selfRotationSpeedE * (2.5875f / 0.4651f));
     uranus.setMaterial(
         glm::vec3(0.20f, 0.30f, 0.40f), 
         glm::vec3(0.25f, 0.35f, 0.45f), 
@@ -158,7 +163,7 @@ int main() {
     );
 
     // NEPTUNO
-    Sphere neptune(1.6f);
+    Sphere neptune(selfRotationSpeedE * (2.6869f / 0.4651f));
     neptune.setMaterial(
         glm::vec3(0.05f, 0.05f, 0.40f), 
         glm::vec3(0.10f, 0.10f, 0.50f), 
@@ -167,7 +172,7 @@ int main() {
     );
 
     // LUNA
-    Sphere moon(0.5f); // Rotación sobre su eje
+    Sphere moon(moonOrbitalSpeed);
     moon.setMaterial(
         glm::vec3(0.10f, 0.10f, 0.10f), 
         glm::vec3(0.25f, 0.25f, 0.25f), 
